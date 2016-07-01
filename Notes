@@ -1,0 +1,5 @@
+You get the CIfact, mode and percentage from the heuristics
+
+feed them to DefLogNDist
+
+Generate the Data with MyLogRand
