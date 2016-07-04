@@ -1,7 +1,12 @@
 import sympy as sp
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import cgitb
+cgitb.enable()
+import sys
+import json
+import os
+
 
 def CalcScaleParam_bounce(mode,CIfact, percentage, precision):
     """
@@ -16,7 +21,6 @@ def CalcScaleParam_bounce(mode,CIfact, percentage, precision):
     The system has been rewritten so that we can find the sigma first, and then use this to determine the mu.
 
     """
-
     upperbound = sys.float_info.max
     lowerbound = sys.float_info.min
 
@@ -39,7 +43,6 @@ def CalcScaleParam_bounce(mode,CIfact, percentage, precision):
         else:
             upperbound=testbound
             sigma= float(testbound)
-        print('iterating')
 
     mu = sp.log(mode) + sigma ** 2
 
@@ -70,20 +73,15 @@ def MyLogRand(mu, sigma, sample_size):
 
     sample = np.random.lognormal(mu, sigma, sample_size)
 
-    count, bins, ignored = plt.hist(sample, 100, normed=True, align='mid')
-    x = np.linspace(min(bins), max(bins), 10000)
-    pdf = (np.exp(-(np.log(x) - mu) ** 2 / (2 * sigma ** 2))
-           / (x * sigma * np.sqrt(2 * np.pi)))
-
-    plt.plot(x, pdf, linewidth=2, color='r')
-    plt.xlim(xmax=20)
-    # plt.axis('tight')
-    plt.show()
+    return sample
 
 if __name__ == '__main__':
 
+    #commandIN = sys.stdin.read()
+    #commandIN = json.loads(commandIN)
+
     mu, sigma = CalcScaleParam_bounce(2,2,0.95, 0.0001)
 
-    print(mu, sigma)
+    sample = MyLogRand(mu, sigma, 10000)
 
-    MyLogRand(mu, sigma, 10000)
+    print(sample)

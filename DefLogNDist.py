@@ -139,8 +139,9 @@ def CalcScaleParam_findroot(mode,CIfact, percentage):
 
     print(sigma)
 
-def CalcScaleParam_bounce(mode,CIfact, percentage, precision, upperbound):
+def CalcScaleParam_bounce(mode,CIfact, percentage, precision):
 
+    upperbound = sys.float_info.max
     lowerbound = sys.float_info.min
     testbound=0
 
@@ -179,4 +180,4 @@ def CalcScaleParam_bounce(mode,CIfact, percentage, precision, upperbound):
 #CalcScaleParam_nsolve(1000000000,100000000,0.99)
 #CalcScaleParam_findroot(100,150,0.95)
 #CalcScaleParam_nsolveiter(2,2,0.95)
-CalcScaleParam_bounce(2,2,0.95, 0.0001, sys.float_info.max)
+CalcScaleParam_bounce(2,2,0.95, 0.0001)
