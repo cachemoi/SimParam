@@ -1,3 +1,7 @@
+#!/Users/user/Anaconda3/python.exe
+
+#This is the version on the server
+
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +13,7 @@ import json
 import os
 
 
-def CalcScaleParam_bounce(mode,CIfact, percentage, precision):
+def CalcScaleParam_bounce(mode,CIfact, percentage):
     """
 
     This will calculate the value of sigma and mu of a theoretical log normal distribution with an arbitrary amount of
@@ -24,6 +28,7 @@ def CalcScaleParam_bounce(mode,CIfact, percentage, precision):
     """
     upperbound = sys.float_info.max
     lowerbound = sys.float_info.min
+    precision = 0.00001
 
     Xmin = mode / CIfact
     Xmax = mode * CIfact
@@ -73,21 +78,39 @@ def MyLogRand(mu, sigma, sample_size):
     """
 
     sample = np.random.lognormal(mu, sigma, sample_size)
+    sample = sample.tolist()
 
     return sample
 
+def main(input):
+    mode = float(commandIN["choices"]["mode"])
+    confidence = float(commandIN["choices"]["confidence"])
+    sample_size = float(commandIN["choices"]["sample_size"])
+    percentage = float(commandIN["choices"]["percentage"])
 
+    mu,sigma = CalcScaleParam_bounce(mode,confidence,percentage)
+    sample = MyLogRand(mu, sigma, sample_size)
 
+    with open("C:\\xampp\htdocs\SimParam\\results\\test.csv", 'w',  encoding='utf-8-sig') as file:
+        file.write("parameter value,\n")
+        for value in sample:
+            file.write(str(value) + ",\n")
 
-#commandIN = sys.stdin.read()
-#commandIN = json.loads(commandIN)
+    return sample
 
-#mu, sigma = CalcScaleParam_bounce(2,2,0.95, 0.0001)
+#mu, sigma = CalcScaleParam_bounce(2,2,0.95)
 
 #sample = MyLogRand(mu, sigma, 10000)
 
-#form= cgi.FieldStorage()
+#form = cgi.FieldStorage()
 
-print("Content-Type: text/plain")
+commandIN =sys.stdin.read()
+commandIN = json.loads(commandIN)
+
+sample = main(commandIN)
+
+print('Content-Type: application/json')
 print()
-print(str(form))
+print(json.dumps(sample))
+
+#insead of percentage would it not be better to give alpha and beta error
