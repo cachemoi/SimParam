@@ -1,6 +1,7 @@
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
+import cgi
 import cgitb
 cgitb.enable()
 import sys
@@ -75,13 +76,18 @@ def MyLogRand(mu, sigma, sample_size):
 
     return sample
 
-if __name__ == '__main__':
 
-    #commandIN = sys.stdin.read()
-    #commandIN = json.loads(commandIN)
 
-    mu, sigma = CalcScaleParam_bounce(2,2,0.95, 0.0001)
 
-    sample = MyLogRand(mu, sigma, 10000)
+#commandIN = sys.stdin.read()
+#commandIN = json.loads(commandIN)
 
-    print(sample)
+#mu, sigma = CalcScaleParam_bounce(2,2,0.95, 0.0001)
+
+#sample = MyLogRand(mu, sigma, 10000)
+
+#form= cgi.FieldStorage()
+
+print("Content-Type: text/plain")
+print()
+print(str(form))
