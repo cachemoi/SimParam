@@ -86,4 +86,4 @@ if __name__ == '__main__':
 
     print(mu, sigma)
 
-    MyLogRand(mu, sigma, 10000)
+    MyLogRand(mu, sigma, 100000)

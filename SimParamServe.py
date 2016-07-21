@@ -1,13 +1,10 @@
-#!/Users/user/Anaconda3/python.exe
+#!/home/cachemoi/anaconda3/bin/python
 
 #This is the version on the server
 
 import sympy as sp
 import numpy as np
 import matplotlib.pyplot as plt
-import cgi
-import cgitb
-cgitb.enable()
 import sys
 import json
 import os
@@ -61,10 +58,10 @@ def MyLogRand(mu, sigma, sample_size):
     """
 
     :param mu:
-     μ, the mean of a population
+     the mean of a population
 
     :param sigma:
-    σ, measure of variation and dispesion of a set of data value
+    measure of variation and dispesion of a set of data value
 
     :sample_size:
     The desired number of samples
@@ -91,7 +88,7 @@ def main(input):
     mu,sigma = CalcScaleParam_bounce(mode,confidence,percentage)
     sample = MyLogRand(mu, sigma, sample_size)
 
-    with open("C:\\xampp\htdocs\SimParam\\results\\test.csv", 'w',  encoding='utf-8-sig') as file:
+    with open("/home/cachemoi/Desktop/Programs/Web/SimParamNode/public/results/test.csv", 'w',  encoding='utf-8-sig') as file:
         file.write("parameter value,\n")
         for value in sample:
             file.write(str(value) + ",\n")
@@ -102,15 +99,8 @@ def main(input):
 
 #sample = MyLogRand(mu, sigma, 10000)
 
-#form = cgi.FieldStorage()
-
 commandIN =sys.stdin.read()
 commandIN = json.loads(commandIN)
-
 sample = main(commandIN)
 
-print('Content-Type: application/json')
-print()
 print(json.dumps(sample))
-
-#insead of percentage would it not be better to give alpha and beta error
