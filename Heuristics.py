@@ -130,17 +130,15 @@ def multiplyWeights():
 def weightValues(value, method, condition, enzyme, organism):
 
     weightMethod(method)
-    print(weight.method)
     weightConditions(condition)
-    print(weight.conditions)
     weightEnzyme(enzyme)
-    print(weight.enzyme)
     weightOrganism(organism)
-    print(weight.organism)
+
     multiplyWeights()
-    print(weight.total)
 
 def main():
+
+    #this is an array with possible parameter values and weight used as example
 
     data.value_options = {
         2 : [1,2,3,1],
@@ -151,6 +149,7 @@ def main():
     }
 
     for value in data.value_options:
+
         data.measured_v.append(value)
 
         method = data.value_options[value][0]
@@ -165,7 +164,10 @@ def main():
 
     print(data.weights)
     print(data.measured_v)
+
     print(ws.median(data.measured_v))
+
+
     print(ws.weighted_median(data.measured_v, data.weights))
 
 main()

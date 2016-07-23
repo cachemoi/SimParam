@@ -13,8 +13,7 @@ import os
 def CalcScaleParam_bounce(mode,CIfact, percentage):
     """
 
-    This will calculate the value of sigma and mu of a theoretical log normal distribution with an arbitrary amount of
-    precision given a Confidence interval factor and a mode.
+    This will calculate the value of sigma and mu of a theoretical log normal distribution given a Confidence interval factor and a mode.
 
     The equation to find mu and sigma is a system of 2 equation.
         - The CDF
