@@ -1,11 +1,14 @@
 
-
+import csv
 import json
-
+import string
+import random
 import sympy as sp
 import numpy as np
 import sys
 import weightedstats as ws
+import pprint
+import pandas as pd
 from collections import defaultdict
 
 class DataOUT:
@@ -151,6 +154,7 @@ def CalcMuSigma(mode,CIfact, percentage):
 
     while not ((upperbound -lowerbound) <= precision):
         testbound = lowerbound + (upperbound-lowerbound)/2
+        print(upperbound - lowerbound)
 
         f_lowerbound = eqn.evalf(subs={s: lowerbound})
         f_testbound = eqn.evalf(subs={s: testbound})
@@ -193,7 +197,7 @@ def GenerateSamples(mu, sigma, sample_size):
 
     return samples
 
-def getSamples(values_array,  reaction_ID, param_ID, percentage, sample_num):
+def RunAll(values_array, reaction_ID, param_ID, percentage, sample_num):
 
     values = []
     weights = []
@@ -203,36 +207,145 @@ def getSamples(values_array,  reaction_ID, param_ID, percentage, sample_num):
         values.append(float(value[0]))
         weights.append(float(WeightValue(*value[1])))
 
+    print(values)
+    print(weights)
+
     mode, CI_factor = CalcModeCI_Factor(values,weights)
 
     mu, sigma = CalcMuSigma(mode, CI_factor, percentage)
 
     samples = GenerateSamples(mu, sigma, sample_num)
 
-    return samples
+    return(samples, mu , sigma , mode , CI_factor , 0.00001)
 
-#initializing the global objects
+def ID_Generator(size=10, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
+print(ID_Generator())
 
-data = sys.stdin.read()
+def GenerateFileName (data_type, ID):
+
+    random_part = ID_Generator()
+
+    path = "/home/cachemoi/Desktop/Programs/Python/SimParam/" + data_type + "/" + ID + "-" + random_part + ".csv"
+
+    return path
+
+def SaveSamples(param_ID, samples):
+
+    samples_filename = GenerateFileName("results", param_ID)
+
+    with open(samples_filename, 'w', encoding='utf-8-sig') as file:
+        file.write(str(param_ID) + ",\n")
+
+        for value in samples:
+            file.write(str(value) + ",\n")
+
+def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
+
+    meta_filename = GenerateFileName("Metadata", param_ID)
+
+    with open(meta_filename, 'w', encoding='utf-8-sig') as file:
+        file.write("mu,sigma,mode,CI factor,precision\n" +
+                   str(mu) + "," + str(sigma) + "," + str(mode) + "," + str(CI_factor) + "," + str(precision))
+
+def SaveRxn(reaction):
+
+    reaction_ID = reaction["ID"]
+
+    rxn_filename = GenerateFileName("results", reaction_ID)
+
+    headers = []
+    samples_array = []
+
+    for parameter in reaction["parameters"]:
+
+        headers.append(parameter["ID"])
+        samples_array.append(parameter["value"])
+
+    print(len(samples_array))
+
+    df = pd.DataFrame(samples_array)
+
+    df = df.transpose()
+    df.columns = headers
+
+    df.to_csv(path_or_buf=rxn_filename, encoding='utf-8', index=False)
+
+    print(df)
+
+def SaveData (data):
+
+    rxn_headers = []
+    param_headers = []
+    samples_array = []
+
+    rxn_filename = GenerateFileName("results", "total")
+
+    for reaction in data["reactions"]:
+
+        reaction_ID = reaction["ID"]
+
+        for parameter in reaction["parameters"]:
+
+            rxn_headers.append(reaction_ID)
+            param_headers.append(parameter["ID"])
+            samples_array.append(parameter["value"])
+
+    df = pd.DataFrame(samples_array)
+
+    df = df.transpose()
+    df.columns = rxn_headers
+    df.columns = param_headers
+
+    df.to_csv(path_or_buf=rxn_filename, encoding='utf-8', index=False)
+
+    print(df)
+
+"""
+values = [5,12,3,4]
+weights = [2,4,5,6]
+
+CalcCI_Factor(values, weights)
+
+print(CalcScaleParam(2, 3, 0.95))
+
+print(GenerateSamples(0.9462082515981913,0.5030517578124999,10))
+"""
+
+# initializing the global objects
+
+data = '{"reactions":[{"ID":"Reaction 1","parameters":[{"ID":"param11","sampleNum":"10","percentage":".95","value":[["2",[1,1,1,1]]]},{"ID":"param12","sampleNum":"10","percentage":".95","value":[["1",[1,1,1,1]],["3",[1,1,1,1]]]}]},{"ID":"Reaction 2","parameters":[{"ID":"param12","sampleNum":"10","percentage":"0.95","value":[["1",[1,1,1,1]]]}]}]}'
+
 data = json.loads(data)
 
+pp = pprint.PrettyPrinter(indent=4)
+print(pp.pprint(data))
 
 for reaction in data["reactions"]:
 
     reaction_ID = reaction["ID"]
 
     for parameter in reaction["parameters"]:
-
-        #extract data from incoming object
+        # extract data from incoming object
 
         param_ID = parameter["ID"]
         percentage = float(parameter["percentage"])
         sample_num = float(parameter["sampleNum"])
         values_array = parameter["value"]
 
-        samples = getSamples(values_array, reaction_ID, param_ID, percentage, sample_num)
+        samples, mu, sigma, mode, CI_factor, precision = RunAll(values_array, reaction_ID, param_ID, percentage,
+                                                                sample_num)
 
         parameter["value"] = samples
 
-print(json.dumps(data))
+        SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision)
+
+        SaveSamples(param_ID, samples)
+
+    SaveRxn(reaction)
+
+SaveData(data)
+
+
+#print(pp.pprint(data))
