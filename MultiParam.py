@@ -40,7 +40,7 @@ def WeightMethod(method):
         2 : 1
     }
 
-    return options[method]
+    return options[int(method)]
 
 def WeightChoice (similarity_score):
 
@@ -50,7 +50,7 @@ def WeightChoice (similarity_score):
         3: 1
     }
 
-    return options[similarity_score]
+    return options[int(similarity_score)]
 
 def WeightValue(method, condition, enzyme, organism):
 
@@ -140,6 +140,8 @@ def CalcMuSigma(mode,CIfact, percentage):
     The system has been rewritten so that we can find the sigma first, and then use this to determine the mu.
 
     """
+
+
     upperbound = sys.float_info.max
     lowerbound = sys.float_info.min
     precision = 0.00001
@@ -199,6 +201,12 @@ def GenerateSamples(mu, sigma, sample_size):
 
 def RunAll(values_array, reaction_ID, param_ID, percentage, sample_num):
 
+    """
+
+    this function will coordinate the execution of all other functions and return the samples and the metadata
+
+    """
+
     values = []
     weights = []
 
@@ -219,11 +227,23 @@ def RunAll(values_array, reaction_ID, param_ID, percentage, sample_num):
     return(samples, mu , sigma , mode , CI_factor , 0.00001)
 
 def ID_Generator(size=10, chars=string.ascii_uppercase + string.digits):
+
+    """
+    :param size: the length of the random string
+    :param chars: the type of characters in the random string
+    :return: a random string to add to our filename as unique ID
+    """
+
     return ''.join(random.choice(chars) for _ in range(size))
 
-print(ID_Generator())
-
 def GenerateFileName (data_type, ID):
+
+    """
+
+    :param data_type: the file name in which the data will be saved
+    :param ID: the ID of our file
+    :return: the filepath in which our file will be saved
+    """
 
     random_part = ID_Generator()
 
@@ -232,6 +252,14 @@ def GenerateFileName (data_type, ID):
     return path
 
 def SaveSamples(param_ID, samples):
+
+    """
+
+    :param param_ID: The ID of the parameter we want to save
+    :param samples: the array of samples we generated
+    :return: This function will save the file
+    """
+
 
     samples_filename = GenerateFileName("results", param_ID)
 
@@ -243,6 +271,10 @@ def SaveSamples(param_ID, samples):
 
 def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
 
+    """
+    :return: This function will save the metadata for 1 parameter
+    """
+
     meta_filename = GenerateFileName("Metadata", param_ID)
 
     with open(meta_filename, 'w', encoding='utf-8-sig') as file:
@@ -250,6 +282,12 @@ def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
                    str(mu) + "," + str(sigma) + "," + str(mode) + "," + str(CI_factor) + "," + str(precision))
 
 def SaveRxn(reaction):
+
+    """
+
+    :param reaction: the reaction object we want to save
+    :return: this function will save data for one whole reaction object
+    """
 
     reaction_ID = reaction["ID"]
 
@@ -276,6 +314,11 @@ def SaveRxn(reaction):
 
 def SaveData (data):
 
+    """
+    :param data: the data object we want to save
+    :return: This function will save a data object
+    """
+
     rxn_headers = []
     param_headers = []
     samples_array = []
@@ -293,14 +336,17 @@ def SaveData (data):
             samples_array.append(parameter["value"])
 
     df = pd.DataFrame(samples_array)
-
     df = df.transpose()
-    df.columns = rxn_headers
+
     df.columns = param_headers
 
-    df.to_csv(path_or_buf=rxn_filename, encoding='utf-8', index=False)
-
     print(df)
+
+    df.columns = pd.MultiIndex.from_tuples(list(zip(rxn_headers,df.columns)))
+
+    print(list(zip(rxn_headers,df.columns)))
+
+    df.to_csv(path_or_buf=rxn_filename, encoding='utf-8', index=False)
 
 """
 values = [5,12,3,4]
@@ -315,8 +361,7 @@ print(GenerateSamples(0.9462082515981913,0.5030517578124999,10))
 
 # initializing the global objects
 
-data = '{"reactions":[{"ID":"Reaction 1","parameters":[{"ID":"param11","sampleNum":"10","percentage":".95","value":[["2",[1,1,1,1]]]},{"ID":"param12","sampleNum":"10","percentage":".95","value":[["1",[1,1,1,1]],["3",[1,1,1,1]]]}]},{"ID":"Reaction 2","parameters":[{"ID":"param12","sampleNum":"10","percentage":"0.95","value":[["1",[1,1,1,1]]]}]}]}'
-
+data = '{"reactions":[{"ID":"Reaction 1","parameters":[{"ID":"param","sampleNum":"1000","percentage":".95","value":[["1",["1","1","3","3"]]]}]}]}'
 data = json.loads(data)
 
 pp = pprint.PrettyPrinter(indent=4)
