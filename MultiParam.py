@@ -247,9 +247,14 @@ def GenerateFileName (data_type, ID):
 
     random_part = ID_Generator()
 
-    path = "/home/cachemoi/Desktop/Programs/Python/SimParam/" + data_type + "/" + ID + "-" + random_part + ".csv"
+    file_name =  ID + "-" + random_part + ".csv"
+    print(file_name)
 
-    return path
+    file_path = "/home/cachemoi/Desktop/Programs/Python/SimParam/" + data_type + "/"
+
+    path = file_path + file_name
+
+    return path, file_name
 
 def SaveSamples(param_ID, samples):
 
@@ -257,17 +262,19 @@ def SaveSamples(param_ID, samples):
 
     :param param_ID: The ID of the parameter we want to save
     :param samples: the array of samples we generated
-    :return: This function will save the file
+    :return: This function will save the file for a single parameter
     """
 
 
-    samples_filename = GenerateFileName("results", param_ID)
+    file_path, samples_filename = GenerateFileName("results", param_ID)
 
-    with open(samples_filename, 'w', encoding='utf-8-sig') as file:
+    with open(file_path, 'w', encoding='utf-8-sig') as file:
         file.write(str(param_ID) + ",\n")
 
         for value in samples:
             file.write(str(value) + ",\n")
+
+    return samples_filename
 
 def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
 
@@ -275,11 +282,13 @@ def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
     :return: This function will save the metadata for 1 parameter
     """
 
-    meta_filename = GenerateFileName("Metadata", param_ID)
+    file_path, meta_filename = GenerateFileName("Metadata", param_ID)
 
-    with open(meta_filename, 'w', encoding='utf-8-sig') as file:
+    with open(file_path, 'w', encoding='utf-8-sig') as file:
         file.write("mu,sigma,mode,CI factor,precision\n" +
                    str(mu) + "," + str(sigma) + "," + str(mode) + "," + str(CI_factor) + "," + str(precision))
+
+    return meta_filename
 
 def SaveRxn(reaction):
 
@@ -291,7 +300,7 @@ def SaveRxn(reaction):
 
     reaction_ID = reaction["ID"]
 
-    rxn_filename = GenerateFileName("results", reaction_ID)
+    file_path, rxn_filename = GenerateFileName("results", reaction_ID)
 
     headers = []
     samples_array = []
@@ -308,9 +317,11 @@ def SaveRxn(reaction):
     df = df.transpose()
     df.columns = headers
 
-    df.to_csv(path_or_buf=rxn_filename, encoding='utf-8', index=False)
+    df.to_csv(path_or_buf=file_path, encoding='utf-8', index=False)
 
     print(df)
+
+    return rxn_filename
 
 def SaveData (data):
 
@@ -323,7 +334,7 @@ def SaveData (data):
     param_headers = []
     samples_array = []
 
-    rxn_filename = GenerateFileName("results", "total")
+    file_path, data_filename = GenerateFileName("results", "total")
 
     for reaction in data["reactions"]:
 
@@ -346,7 +357,9 @@ def SaveData (data):
 
     print(list(zip(rxn_headers,df.columns)))
 
-    df.to_csv(path_or_buf=rxn_filename, encoding='utf-8', index=False)
+    df.to_csv(path_or_buf=file_path, encoding='utf-8', index=False)
+
+    return data_filename
 
 """
 values = [5,12,3,4]
@@ -361,7 +374,7 @@ print(GenerateSamples(0.9462082515981913,0.5030517578124999,10))
 
 # initializing the global objects
 
-data = '{"reactions":[{"ID":"Reaction 1","parameters":[{"ID":"param","sampleNum":"1000","percentage":".95","value":[["1",["1","1","3","3"]]]}]}]}'
+data = '{"reactions":[{"ID":"Reaction 1","parameters":[{"ID":"param","sampleNum":"10","percentage":".95","value":[["1",["1","1","3","3"]]]}]}]}'
 data = json.loads(data)
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -384,13 +397,13 @@ for reaction in data["reactions"]:
 
         parameter["value"] = samples
 
-        SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision)
+        parameter["metadata-filename"] = SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision)
 
-        SaveSamples(param_ID, samples)
+        parameter["samples-filename"] = SaveSamples(param_ID, samples)
 
-    SaveRxn(reaction)
+    reaction["samples-filename"] = SaveRxn(reaction)
 
-SaveData(data)
+data["samples-filename"] = SaveData(data)
 
 
-#print(pp.pprint(data))
+print(pp.pprint(data))
