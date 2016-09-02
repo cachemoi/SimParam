@@ -1,19 +1,128 @@
-#!/home/cachemoi/anaconda3/bin/python
+#! /home/max/anaconda3/bin/python
 
-#This is the version on the server
-
+import csv
+import json
+import string
+import random
 import sympy as sp
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
-import json
-import os
+import weightedstats as ws
+import pprint
+import pandas as pd
+from collections import defaultdict
 
+class DataOUT:
+    def __init__(self):
+        self.reactions = []
 
-def CalcScaleParam_bounce(mode,CIfact, percentage):
+class Reaction:
+    def __init__(self,ID):
+        self.parameters = {}
+        self.ID = ID
+
+class Parameter:
+    def __init__(self, ID):
+        self.ID = ID
+        self.samples = []
+        self.metadata = {}
+
+"""
+
+These funtions are to weigh the methods and the individual selections
+
+"""
+
+def WeightMethod(method):
+
+    options = {
+        1 : 2,
+        2 : 1
+    }
+
+    return options[int(method)]
+
+def WeightChoice (similarity_score):
+
+    options = {
+        1: 4,
+        2: 2,
+        3: 1
+    }
+
+    return options[int(similarity_score)]
+
+def WeightValue(method, condition, enzyme, organism):
+
     """
 
-    This will calculate the value of sigma and mu of a theoretical log normal distribution given a Confidence interval factor and a mode.
+    This method will calculate the total weight of a single value given options
+
+    """
+
+    method_score = WeightMethod(method)
+
+    condition_score = WeightChoice(condition)
+    enzyme_score = WeightChoice(enzyme)
+    organism_score = WeightChoice(organism)
+
+    return condition_score*enzyme_score*organism_score*method_score
+
+def CalcModeCI_Factor (values, weights):
+
+    """
+
+    This function will find the confidence interval factor of our data given an array of values and weights of equal length
+
+    If all values are the same or we only have 1 sample, we use a CI factor of 10 to generate the range of values from which we sample
+
+    """
+
+    if len(values) == 1 or len(set(values)) <= 1:
+
+        mode = values[0]
+
+        CI_factor = 10
+
+    else:
+
+        total_weight = sum(weights)
+        array_len = len(weights)
+        mode = ws.weighted_median(values, weights)
+
+        min_position_weighted = round(0.25*total_weight)
+        max_position_weighted = round(0.975*total_weight)
+
+        #translating the weights and the values array to percentages and using this to find out where the min and max positiions are
+
+        min_position= round(((min_position_weighted*100)/total_weight)*array_len/100) -1
+        max_position= round(((max_position_weighted*100)/total_weight)*array_len/100) -1
+
+        sort = sorted(values)
+
+        min_value = sort[min_position]
+        max_value = sort[max_position]
+
+        if min_value == max_value:
+
+            mode = min_value
+            CI_factor = 10
+
+        else:
+            CI_min = mode/min_value
+            CI_max = max_value/mode
+
+            CI_factor = (CI_min + CI_max)/2
+
+    return (mode, CI_factor)
+
+def CalcMuSigma(mode,CIfact, percentage):
+
+    """
+
+
+    This will calculate the value of sigma and mu of a theoretical log normal distribution with an arbitrary amount of
+    precision given a Confidence interval factor, a mode and a percentage of values that will be contained within the defined boundaries
 
     The equation to find mu and sigma is a system of 2 equation.
         - The CDF
@@ -52,7 +161,7 @@ def CalcScaleParam_bounce(mode,CIfact, percentage):
 
     return (mu, sigma)
 
-def MyLogRand(mu, sigma, sample_size):
+def GenerateSamples(mu, sigma, sample_size):
 
     """
 
@@ -73,33 +182,181 @@ def MyLogRand(mu, sigma, sample_size):
 
     """
 
-    sample = np.random.lognormal(mu, sigma, sample_size)
-    sample = sample.tolist()
+    samples = np.random.lognormal(mu, sigma, sample_size)
+    samples = samples.tolist()
 
-    return sample
+    return samples
 
-def main(input):
-    mode = float(commandIN["choices"]["mode"])
-    confidence = float(commandIN["choices"]["confidence"])
-    sample_size = float(commandIN["choices"]["sample_size"])
-    percentage = float(commandIN["choices"]["percentage"])
+def ID_Generator(size=10, chars=string.ascii_uppercase + string.digits):
+    """
+    :param size: the length of the random string
+    :param chars: the type of characters in the random string
+    :return: a random string to add to our filename as unique ID
+    """
 
-    mu,sigma = CalcScaleParam_bounce(mode,confidence,percentage)
-    sample = MyLogRand(mu, sigma, sample_size)
+    return ''.join(random.choice(chars) for _ in range(size))
 
-    with open("/home/cachemoi/Desktop/Programs/Web/SimParamNode/public/results/test.csv", 'w',  encoding='utf-8-sig') as file:
-        file.write("parameter value,\n")
-        for value in sample:
+def GenerateFileName(data_type, ID):
+    """
+
+    :param data_type: the file name in which the data will be saved
+    :param ID: the ID of our file
+    :return: the filepath in which our file will be saved
+    """
+
+    random_part = ID_Generator()
+    file_name = ID + "-" + random_part + ".csv"
+
+    file_path = "/home/max/SimParamNode/public/results/" + data_type + "/"
+    path = file_path + file_name
+
+    return path, file_name
+
+def SaveSamples(param_ID, samples):
+    """
+
+    :param param_ID: The ID of the parameter we want to save
+    :param samples: the array of samples we generated
+    :return: This function will save the file
+    """
+
+    file_path, samples_filename = GenerateFileName("Samples", param_ID)
+
+    with open(file_path, 'w', encoding='utf-8-sig') as file:
+        file.write(str(param_ID) + ",\n")
+
+        for value in samples:
             file.write(str(value) + ",\n")
 
-    return sample
+    return samples_filename
 
-#mu, sigma = CalcScaleParam_bounce(2,2,0.95)
+def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
+    """
+    :return: This function will save the metadata for 1 parameter
+    """
 
-#sample = MyLogRand(mu, sigma, 10000)
+    file_path, meta_filename = GenerateFileName("Metadata", param_ID)
 
-commandIN =sys.stdin.read()
-commandIN = json.loads(commandIN)
-sample = main(commandIN)
+    with open(file_path, 'w', encoding='utf-8-sig') as file:
+        file.write("mu,sigma,mode,CI factor,precision\n" +
+                   str(mu) + "," + str(sigma) + "," + str(mode) + "," + str(CI_factor) + "," + str(precision))
 
-print(json.dumps(sample))
+    return meta_filename
+
+def SaveRxn(reaction):
+    """
+
+    :param reaction: the reaction object we want to save
+    :return: this function will save data for one whole reaction object
+    """
+
+    reaction_ID = reaction["ID"]
+
+    file_path, rxn_filename = GenerateFileName("Samples", reaction_ID)
+
+    headers = []
+    samples_array = []
+
+    for parameter in reaction["parameters"]:
+        headers.append(parameter["ID"])
+        samples_array.append(parameter["values"])
+
+    df = pd.DataFrame(samples_array)
+
+    df = df.transpose()
+    df.columns = headers
+
+    df.to_csv(path_or_buf=file_path, encoding='utf-8', index=False)
+
+    return rxn_filename
+
+def SaveData(data):
+    """
+    :param data: the data object we want to save
+    :return: This function will save a data object
+    """
+
+    rxn_headers = []
+    param_headers = []
+    samples_array = []
+
+    file_path, data_filename = GenerateFileName("Samples", "total")
+
+    for reaction in data["reactions"]:
+
+        reaction_ID = reaction["ID"]
+
+        for parameter in reaction["parameters"]:
+            rxn_headers.append(reaction_ID)
+            param_headers.append(parameter["ID"])
+            samples_array.append(parameter["values"])
+
+    df = pd.DataFrame(samples_array)
+    df = df.transpose()
+
+    df.columns = param_headers
+
+    df.columns = pd.MultiIndex.from_tuples(list(zip(rxn_headers, df.columns)))
+
+    df.to_csv(path_or_buf=file_path, encoding='utf-8', index=False)
+
+    return data_filename
+
+def SampleParam(values_array, reaction_ID, param_ID, percentage, sample_num):
+    """
+
+    this function will coordinate the execution of all other functions and return the samples and the metadata
+
+    """
+
+    values = []
+    weights = []
+
+    for value in values_array:
+        values.append(float(value[0]))
+        weights.append(float(WeightValue(*value[1])))
+
+    mode, CI_factor = CalcModeCI_Factor(values, weights)
+
+    mu, sigma = CalcMuSigma(mode, CI_factor, percentage)
+
+    samples = GenerateSamples(mu, sigma, sample_num)
+
+    return (samples, mu, sigma, mode, CI_factor, 0.00001)
+
+
+#initializing the global objects
+
+#data = '{"reactions":[{"ID":"dw","parameters":[{"ID":"wda","sampleNum":"1","percentage":".95","values":[["12",[1,1,1,1]]]}]},{"ID":"dw","parameters":[{"ID":"dwa","sampleNum":"1","percentage":".8","values":[["12",[1,1,1,1]]]},{"ID":"dwa","sampleNum":"122","percentage":".3","values":[["1222",[1,1,1,1]]]}]}]}'
+data = sys.stdin.read()
+data = json.loads(data)
+
+
+for reaction in data["reactions"]:
+
+    reaction_ID = reaction["ID"]
+
+    for parameter in reaction["parameters"]:
+
+        # extract data from incoming object
+
+        param_ID = parameter["ID"]
+        percentage = float(parameter["percentage"])
+        sample_num = float(parameter["sampleNum"])
+        values_array = parameter["values"]
+
+        samples, mu, sigma, mode, CI_factor, precision = SampleParam(values_array, reaction_ID, param_ID, percentage,
+                                                                sample_num)
+
+        parameter["values"] = samples
+
+        parameter["metadata-filename"] = SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision)
+
+        parameter["samples-filename"] = SaveSamples(param_ID, samples)
+
+    reaction["samples-filename"] = SaveRxn(reaction)
+
+data["samples-filename"] = SaveData(data)
+
+
+print(json.dumps(data))
