@@ -282,7 +282,7 @@ def SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision):
     :return: This function will save the metadata for 1 parameter
     """
 
-    file_path, meta_filename = GenerateFileName("Metadata", param_ID)
+    file_path, meta_filename = GenerateFileName("metadata", param_ID)
 
     with open(file_path, 'w', encoding='utf-8-sig') as file:
         file.write("mu,sigma,mode,CI factor,precision\n" +
