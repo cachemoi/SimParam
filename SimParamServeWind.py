@@ -207,7 +207,7 @@ def GenerateFileName(data_type, ID):
     random_part = ID_Generator()
     file_name = ID + "-" + random_part + ".csv"
 
-    file_path = "/home/max/SimParamNode/public/results/" + data_type + "/"
+    file_path = r"C:\\Users\user\PycharmProjects\SimParam\results\\" + data_type + "\\"
     path = file_path + file_name
 
     return path, file_name
@@ -327,8 +327,8 @@ def SampleParam(values_array, reaction_ID, param_ID, percentage, sample_num):
 
 #initializing the global objects
 
-#data = '{"reactions":[{"ID":"dw","parameters":[{"ID":"wda","sampleNum":"1","percentage":".95","values":[["12",[1,1,1,1]]]}]},{"ID":"dw","parameters":[{"ID":"dwa","sampleNum":"1","percentage":".8","values":[["12",[1,1,1,1]]]},{"ID":"dwa","sampleNum":"122","percentage":".3","values":[["1222",[1,1,1,1]]]}]}]}'
-data = sys.stdin.read()
+data = '{"reactions":[{"ID":"dw","parameters":[{"ID":"wda","sampleNum":"1","percentage":".95","values":[["12",[1,1,1,1]]]}]},{"ID":"dw","parameters":[{"ID":"dwa","sampleNum":"1","percentage":".8","values":[["12",[1,1,1,1]]]},{"ID":"dwa","sampleNum":"122","percentage":".3","values":[["1222",[1,1,1,1]]]}]}]}'
+#data = sys.stdin.read()
 data = json.loads(data)
 
 
