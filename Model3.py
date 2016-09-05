@@ -13,6 +13,8 @@ import weightedstats as ws
 import pprint
 import pandas as pd
 from collections import defaultdict
+import matplotlib.mlab as mlab
+import matplotlib.ticker as mtick
 
 class DataOUT:
     def __init__(self):
@@ -328,7 +330,7 @@ def SampleParam(values_array, reaction_ID, param_ID, percentage, sample_num):
 
 #initializing the global objects
 
-data = '{"reactions":[{"ID":"Glucose Phosphorylation","parameters":[{"ID":"km_glu","sampleNum":"1000","percentage":".95","values":[["0.377",[1,1,1,1]]]},{"ID":"km_ATP","sampleNum":"1000","percentage":".95","values":[["1.84",[1,1,1,1]]]},{"ID":"km_G6P","sampleNum":"1000","percentage":".95","values":[["0.5",[1,1,1,1]]]},{"ID":"km_ADP","sampleNum":"100","percentage":".95","values":[["0.5",[1,1,1,1]]]},{"ID":"kcat","sampleNum":"1000","percentage":".95","values":[["717",[1,1,1,1]]]},{"ID":"keq","sampleNum":"1000","percentage":".95","values":[["1310",[1,1,1,1]]]}]}]}'
+data = '{"reactions":[{"ID":"Glucose Phosphorylation","parameters":[{"ID":"km_glu","sampleNum":"1000","percentage":".95","values":[["0.377",[1,1,1,1]]]},{"ID":"km_ATP","sampleNum":"1000","percentage":".95","values":[["1.84",[1,1,1,1]]]},{"ID":"km_G6P","sampleNum":"1000","percentage":".95","values":[["0.5",[1,1,1,1]]]},{"ID":"km_ADP","sampleNum":"1000","percentage":".95","values":[["0.5",[1,1,1,1]]]},{"ID":"kcat","sampleNum":"1000","percentage":".95","values":[["717",[1,1,1,1]]]},{"ID":"keq","sampleNum":"1000","percentage":".95","values":[["1310",[1,1,1,1]]]}]}]}'
 #data = sys.stdin.read()
 data = json.loads(data)
 
@@ -349,6 +351,8 @@ for reaction in data["reactions"]:
         samples, mu, sigma, mode, CI_factor, precision = SampleParam(values_array, reaction_ID, param_ID, percentage,
                                                                 sample_num)
 
+        parameter["mu"] = mu
+        parameter["sigma"] = sigma
         parameter["values"] = samples
 
         #parameter["metadata-filename"] = SaveMeta(param_ID, mu, sigma, mode, CI_factor, precision)
@@ -363,6 +367,111 @@ pprint.pprint(data)
 print("sampled")
 
 print(data["reactions"][0]["parameters"][0]["values"])
+
+"""
+This is to plot parameter values
+"""
+
+km_glu = data["reactions"][0]["parameters"][0]["values"]
+km_ATP = data["reactions"][0]["parameters"][1]["values"]
+km_G6P = data["reactions"][0]["parameters"][2]["values"]
+km_ADP = data["reactions"][0]["parameters"][3]["values"]
+kcat = data["reactions"][0]["parameters"][4]["values"]
+keq = data["reactions"][0]["parameters"][5]["values"]
+
+km_glu_mu = data["reactions"][0]["parameters"][0]["mu"]
+km_ATP_mu = data["reactions"][0]["parameters"][1]["mu"]
+km_G6P_mu = data["reactions"][0]["parameters"][2]["mu"]
+km_ADP_mu = data["reactions"][0]["parameters"][3]["mu"]
+kcat_mu = data["reactions"][0]["parameters"][4]["mu"]
+keq_mu = data["reactions"][0]["parameters"][5]["mu"]
+
+km_glu_simga = data["reactions"][0]["parameters"][0]["mu"]
+km_ATP_simga = data["reactions"][0]["parameters"][1]["mu"]
+km_G6P_simga = data["reactions"][0]["parameters"][2]["mu"]
+km_ADP_simga = data["reactions"][0]["parameters"][3]["mu"]
+kcat_simga = data["reactions"][0]["parameters"][4]["mu"]
+keq_simga = data["reactions"][0]["parameters"][5]["mu"]
+
+plt.figure(1)
+
+ax1 = plt.subplot(2,3,1)
+plt.title("Km glucose")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n, bins, patches = plt.hist(km_glu, 50, facecolor='green', alpha=0.75)
+#y = mlab.normpdf( bins, km_glu_mu, km_glu_simga)
+#l = plt.plot(bins, y, 'r--', linewidth=1)
+ax1.locator_params(axis='x', tight=True, nbins=4)
+ax1.locator_params(axis='y', tight=True, nbins=4)
+plt.grid(True)
+
+
+ax2 = plt.subplot(2,3,2)
+plt.title("Km ATP")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n, bins, patches = plt.hist(km_ATP, 50, facecolor='green', alpha=0.75)
+#y = mlab.normpdf( bins, km_ATP_mu, km_ATP_simga)
+#l = plt.plot(bins, y, 'r--', linewidth=1)
+ax2.locator_params(axis='x', tight=True, nbins=4)
+ax2.locator_params(axis='y', tight=True, nbins=4)
+plt.grid(True)
+
+ax3 = plt.subplot(2,3,3)
+plt.title("Km G6P")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n, bins, patches = plt.hist(km_G6P, 50, facecolor='green', alpha=0.75)
+#y = mlab.normpdf( bins, km_G6P_mu, km_G6P_simga)
+#l = plt.plot(bins, y, 'r--', linewidth=1)
+ax3.locator_params(axis='x', tight=True, nbins=4)
+ax3.locator_params(axis='y', tight=True, nbins=4)
+plt.grid(True)
+
+
+ax4 = plt.subplot(2,3,4)
+plt.title("Km ADP")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n, bins, patches = plt.hist(km_ADP, 50, facecolor='green', alpha=0.75)
+#y = mlab.normpdf( bins, km_ADP_mu, km_ADP_simga)
+#l = plt.plot(bins, y, 'r--', linewidth=1)
+ax4.locator_params(axis='x', tight=True, nbins=2)
+ax4.locator_params(axis='y', tight=True, nbins=4)
+plt.grid(True)
+
+ax5 = plt.subplot(2,3,5)
+plt.title("Keq")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n, bins, patches = plt.hist(keq, 50, facecolor='green', alpha=0.75)
+#y = mlab.normpdf( bins, keq_mu, keq_simga)
+#l = plt.plot(bins, y, 'r--', linewidth=1)
+#ax5.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+#ax5.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+ax5.locator_params(axis='x', tight=True, nbins=2)
+ax5.locator_params(axis='y', tight=True, nbins=4)
+plt.grid(True)
+
+
+ax6 = plt.subplot(2,3,6)
+plt.title("Kcat")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n, bins, patches = plt.hist(kcat, 50, facecolor='green', alpha=0.75)
+#y = mlab.normpdf( bins, kcat_mu, kcat_simga)
+#l = plt.plot(bins, y, 'r--', linewidth=1)
+#ax6.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+#ax6.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+ax6.locator_params(axis='x', tight=True, nbins=4)
+ax6.locator_params(axis='y', tight=True, nbins=4)
+plt.grid(True)
+
+plt.tight_layout()
+plt.savefig(r'C:\Users\user\PycharmProjects\SimParam\results\graphs\graphs.png')
+plt.show()
+
 
 """
 this is to solve the differential equations
@@ -452,7 +561,7 @@ def f (y, t):
 
 
 #time to run simulation
-tspan = np.linspace(0,10)
+tspan = np.linspace(0,3600)
 
 #intitial conditions
 
@@ -488,9 +597,8 @@ def parseData():
     km_glu = random.choice(data["reactions"][0]["parameters"][0]["values"])
     Vf = kcat * hex
 
-    print("param sampled")
-
 results = []
+gluc_60 = []
 
 for _ in range(1000):
     parseData()
@@ -503,10 +611,40 @@ for _ in range(1000):
     results.append(solved)
 
 
-print(results[0][:,0])
+plt.figure(2)
 
 for i in range(len(results)):
+    # 0 = gluc
+    # 1 = ATP
+    # 2 = G6P
+    # 3 = ADP
+    plt.plot(tspan, results[i][:,0], color='b')
 
-    plt.plot(tspan, results[i][:,3], color='b')
+    gluc_60.append(results[i][49,0])
 
+print("gluc_60")
+print(gluc_60)
+plt.show()
+
+
+pprint.pprint(results[0][:,0])
+print(len(results))
+print(len(results[0][:,0]))
+
+mean_gluc = np.mean(gluc_60)
+sigma_gluc = np.std(gluc_60)
+
+
+plt.close()
+
+plt.figure(3)
+
+plt.title("Glucose concentrations after 60min for each run")
+plt.ylabel("Frequency")
+plt.xlabel("Value/mM")
+n1, bins1, patches1 = plt.hist(gluc_60, 50, normed=True, facecolor='green', alpha=0.75)
+#y1 = mlab.normpdf( bins1, mean_gluc, sigma_gluc)
+#l1 = plt.plot(bins1, y1, 'r', linewidth=2)
+plt.grid(True)
+plt.savefig(r'C:\Users\user\PycharmProjects\SimParam\results\graphs\glucose_60')
 plt.show()
